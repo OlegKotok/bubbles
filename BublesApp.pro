@@ -1,9 +1,3 @@
-#
-# Google Project ID: nooncake-290913
-#
-#7f2KqZ3gbtzau8dnFSq3JmVt
-#261623546156-fh9frsdt0gb5jl7pssb0nj3cmgetn4cv.apps.googleusercontent.com
-
 QT += quick quickcontrols2
 
 CONFIG += c++11
