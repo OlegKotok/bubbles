@@ -1,0 +1,86 @@
+name: Test Buld
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, windows-2019, macos-10.15]
+        version: ['5.15.2']
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - name: "npm ci"
+        run: npm ci
+
+      - name: "npm run build"
+        run: |
+          npm run build-setup-python
+          npm run build
+      - name: Install Qt5 with options
+        if: startsWith(matrix.version, '5')
+        uses: ./
+        with:
+          #modules: 'qtwebengine'
+          version: ${{ matrix.version }}
+          tools: 'tools_ifw tools_qtcreator,qt.tools.qtcreator'
+
+      - name: Install Qt6 with options
+        if: startsWith(matrix.version, '6.2')
+        uses: ./
+        with:
+          # In Qt 6.2.0, qtwebengine requires qtpositioning and qtwebchannel
+          #modules: 'qtwebengine qtpositioning qtwebchannel'
+          version: ${{ matrix.version }}
+          tools: 'tools_ifw tools_qtcreator,qt.tools.qtcreator'
+
+      - name: Configure test project on windows
+        if: startsWith(matrix.os, 'windows')
+        env:
+          QT_VERSION: ${{ matrix.version }}
+        run: |
+          call "%programfiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          IF "%QT_VERSION:~0,1%"=="5" ( dir %Qt5_DIR%\lib\cmake ) ELSE ( dir %Qt6_DIR%\lib\cmake )
+           qmake -config release
+          mingw32-make
+        shell: cmd
+
+      - name: Configure test project on unix
+        if: (!startsWith(matrix.os, 'windows'))
+        env:
+          QT_VERSION: ${{ matrix.version }}
+        run: |
+          if [[ $QT_VERSION == 6* ]]; then
+            ls "$Qt6_DIR/lib/cmake"
+          else
+            ls "$Qt5_DIR/lib/cmake"
+          fi
+          qmake -config release && make && chmod u+x ./BublesApp
+        shell: bash
+
+      - name: Deploy Linux Desctop App
+        uses: actions/upload-artifact@v2
+        with:
+          name: bublesapp
+          path: ./BublesApp
+    
+      - name: "pre-release"
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            ./BublesApp
