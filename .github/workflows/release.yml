@@ -14,6 +14,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        submodules: true  # Initialize and update submodules
 
     - name: Set up Qt 5.15
       uses: jurplel/install-qt-action@v3
@@ -48,6 +50,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        submodules: true  # Initialize and update submodules
 
     - name: Set up Qt 5.15
       uses: jurplel/install-qt-action@v3
@@ -64,6 +68,9 @@ jobs:
     - name: Create Windows installer (NSIS)
       run: |
         makensis installer.nsi
+
+- name: List build directory contents
+      run: ls *.exe & ls -la ./build
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v3
