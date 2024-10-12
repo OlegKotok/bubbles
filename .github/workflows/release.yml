@@ -61,7 +61,7 @@ jobs:
         target: 'desktop'
         arch: 'win64_mingw73'
 
-     - name: Install MinGW
+    - name: Install MinGW
       run: choco install mingw
 
     - name: Set PATH for MinGW
