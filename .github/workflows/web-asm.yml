@@ -39,11 +39,11 @@ jobs:
         make -j$(nproc)
     
     - name: List build directory contents
-      run: ls -lh
+      run: ls ./BublesApp/
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./path_to_your_build_output  # Replace with the path to your build output
+        publish_dir: ./BublesApp  # Replace with the path to your build output
 
