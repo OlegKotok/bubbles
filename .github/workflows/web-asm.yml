@@ -40,7 +40,7 @@ jobs:
     
     - name: List Build Output
       run: |
-        find / -name "*.wasm"
+        find . -name "*.wasm"
 
 
     - name: Deploy to GitHub Pages
