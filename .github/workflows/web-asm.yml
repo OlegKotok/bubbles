@@ -38,8 +38,10 @@ jobs:
         qmake CONFIG+=wasm
         make -j$(nproc)
     
-    - name: List build directory contents
-      run: ls ./BublesApp/
+    - name: List Build Output
+      run: |
+        find . -name "*.html" -o -name "*.js" -o -name "*.wasm"
+
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
