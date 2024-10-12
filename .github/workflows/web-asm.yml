@@ -1,0 +1,51 @@
+name: Build and Deploy Qt WebAssembly App
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch if needed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository with submodules
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Set up Emscripten
+      run: |
+        # Install Emscripten SDK
+        git clone https://github.com/emscripten-core/emsdk.git
+        cd emsdk
+        ./emsdk install 1.39.8
+        ./emsdk activate 1.39.8
+        source ./emsdk_env.sh
+        echo "EMSDK=$(pwd)" >> $GITHUB_ENV
+
+    - name: Set up Qt 5.15
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        host: 'linux'
+        target: 'desktop'
+
+    - name: Build project for WebAssembly
+      run: |
+        source $EMSDK/emsdk_env.sh
+        qmake CONFIG+=wasm
+        make -j$(nproc) VERBOSE=1 
+    
+    - name: List Build Output
+      run: |
+        find . -name "*.wasm"
+
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./BublesApp  # Replace with the path to your build output
+
