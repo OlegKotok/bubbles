@@ -24,25 +24,22 @@ jobs:
 
     - name: Build project (macOS)
       run: |
-        qmake BublesApp.pro
+        qmake
         make -j$(sysctl -n hw.ncpu)
-    
-     - name: List build directory contents
-      run: ls -la ./build 
-    
-    - name: List current directory contents
-      run: ls *.app
+
+    - name: List build directory contents
+      run: ls *.app & ls -la ./build
 
     - name: Create macOS installer
       run: |
-        macdeployqt ./BublesApp.app
-        hdiutil create -volname BublesApp -srcfolder ./BublesApp.app -ov -format UDZO BublesApp.dmg
+        macdeployqt ./your-app-name.app
+        hdiutil create -volname your-app-name -srcfolder ./your-app-name.app -ov -format UDZO your-app-name.dmg
 
     - name: Upload macOS artifact
       uses: actions/upload-artifact@v3
       with:
         name: your-app-name-macos.dmg
-        path: BublesApp.dmg
+        path: your-app-name.dmg
 
   build_windows:
     name: Build Windows
@@ -61,7 +58,7 @@ jobs:
 
     - name: Build project (Windows)
       run: |
-        qmake BublesApp.pro
+        qmake
         mingw32-make -j$(nproc)
 
     - name: Create Windows installer (NSIS)
@@ -72,7 +69,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: your-app-name-windows.exe
-        path: BublesApp.exe
+        path: your-app-name.exe
 
   release:
     name: Create GitHub Release
