@@ -26,19 +26,22 @@ jobs:
 
     - name: Build project (macOS)
       run: |
-        qmake
+        qmake BublesApp.pro	
         make -j$(sysctl -n hw.ncpu)
+  
+   - name: List build directory contents
+      run: ls -la ./build 
 
     - name: Create macOS installer
       run: |
-        macdeployqt ./your-app-name.app
-        hdiutil create -volname your-app-name -srcfolder ./your-app-name.app -ov -format UDZO your-app-name.dmg
+        macdeployqt ./build/BublesApp.app
+        hdiutil create -volname Bubbles -srcfolder ./build/BublesApp.app -ov -format UDZO BublesApp.dmg
 
     - name: Upload macOS artifact
       uses: actions/upload-artifact@v3
       with:
-        name: your-app-name-macos.dmg
-        path: your-app-name.dmg
+        name: bubbles.dmg
+        path: BublesApp.dmg
 
   build_windows:
     name: Build Windows
@@ -59,7 +62,7 @@ jobs:
 
     - name: Build project (Windows)
       run: |
-        qmake
+        qmake BublesApp.pro	
         mingw32-make -j$(nproc)
 
     - name: Create Windows installer (NSIS)
@@ -69,8 +72,8 @@ jobs:
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v3
       with:
-        name: your-app-name-windows.exe
-        path: your-app-name.exe
+        name: bubbles.exe
+        path: ./build/BublesApp.exe
 
   release:
     name: Create GitHub Release
@@ -81,18 +84,18 @@ jobs:
     - name: Download macOS installer
       uses: actions/download-artifact@v3
       with:
-        name: your-app-name-macos.dmg
+        name: bubbles.dmg
 
     - name: Download Windows installer
       uses: actions/download-artifact@v3
       with:
-        name: your-app-name-windows.exe
+        name: bubbles.exe
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          your-app-name-macos.dmg
-          your-app-name-windows.exe
+          bubbles.dmg
+          bubbles.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub automatically provides this token

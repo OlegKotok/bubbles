@@ -1,5 +1,6 @@
 QT += quick quickcontrols2
-
+TEMPLATE = app
+CONFIG += app_bundle
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use
