@@ -53,13 +53,13 @@ jobs:
       with:
         submodules: true  # Initialize and update submodules
 
-    - name: Set up Qt 5.15
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '5.15.2'
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_mingw73'
+    - name: List available Qt packages
+      run: |
+        C:\hostedtoolcache\windows\Python\3.11.9\x64\python.exe -m aqt list-qt windows desktop
+
+    - name: Install Qt with MinGW
+      run: |
+        C:\hostedtoolcache\windows\Python\3.11.9\x64\python.exe -m aqt install-qt windows desktop 5.15.2 win64_mingw81 --outputdir D:\a\bubbles/Qt
 
     - name: Install MinGW
       run: choco install mingw
@@ -97,16 +97,16 @@ jobs:
       with:
         name: BubblesApp.dmg
 
-    - name: Download Windows installer
-      uses: actions/download-artifact@v3
-      with:
-        name: BubblesApp.exe
+    #- name: Download Windows installer
+    #  uses: actions/download-artifact@v3
+    #  with:
+    #    name: BubblesApp.exe
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
           BubblesApp.dmg
-          BubblesApp.exe
+      #    BubblesApp.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub automatically provides this token
