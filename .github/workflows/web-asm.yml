@@ -22,7 +22,7 @@ jobs:
         cd emsdk
         ./emsdk install 1.39.8
         ./emsdk activate 1.39.8
-        echo "source $(pwd)/emsdk_env.sh" >> $GITHUB_ENV
+        source ./emsdk_env.sh
         echo "EMSDK=$(pwd)" >> $GITHUB_ENV
 
     - name: Install Qt 5.15
