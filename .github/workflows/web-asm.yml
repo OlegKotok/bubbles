@@ -25,11 +25,12 @@ jobs:
         source ./emsdk_env.sh
         echo "EMSDK=$(pwd)" >> $GITHUB_ENV
 
-    - name: Install Qt 5.15
-      run: |
-        sudo apt-get install -y qt5-default qt5-qmake
-        # This may require additional dependencies based on your project
-        # Add any other dependencies your app may need here
+    - name: Set up Qt 5.15
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        host: 'linux'
+        target: 'desktop'
 
     - name: Build project for WebAssembly
       run: |
