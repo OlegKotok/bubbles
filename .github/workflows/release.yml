@@ -29,9 +29,6 @@ jobs:
         qmake
         make -j$(sysctl -n hw.ncpu)
 
-    - name: List build directory contents
-      run: ls *.app
-
     - name: Create macOS installer
       run: |
         macdeployqt ./BublesApp.app
@@ -53,13 +50,12 @@ jobs:
       with:
         submodules: true  # Initialize and update submodules
 
-    - name: List available Qt packages
-      run: |
-        C:\hostedtoolcache\windows\Python\3.11.9\x64\python.exe -m aqt list-qt windows desktop
-
-    - name: Install Qt with MinGW
-      run: |
-        C:\hostedtoolcache\windows\Python\3.11.9\x64\python.exe -m aqt install-qt windows desktop 5.15.2 win64_mingw81 --outputdir D:\a\bubbles/Qt
+    - name: Set up Qt 5.15
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        host: 'windows'
+        target: 'desktop'
 
     - name: Install MinGW
       run: choco install mingw
