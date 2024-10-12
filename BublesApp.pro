@@ -22,6 +22,7 @@ RESOURCES += qml.qrc
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
 INCLUDEPATH += ./qml-box2d/Box2D
+INCLUDEPATH += ./qml-box2d
 
 # Rules for static QML-Box2D
 include(qml-box2d/box2d-static.pri)
