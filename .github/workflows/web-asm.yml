@@ -35,7 +35,7 @@ jobs:
     - name: Build project for WebAssembly
       run: |
         source $EMSDK/emsdk_env.sh
-        qmake CONFIG+=wasm DESTDIR = ./build
+        qmake CONFIG+=wasm
         make -j$(nproc) VERBOSE=1 
     
     - name: List Build Output

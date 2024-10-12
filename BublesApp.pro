@@ -1,7 +1,8 @@
 QT += quick quickcontrols2
-TEMPLATE = app
-CONFIG += app_bundle
+DESTDIR = ./build
+CONFIG += wasm
 CONFIG += c++11
+TARGET = BublesApp
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -18,8 +19,6 @@ SOURCES += \
         main.cpp
 
 RESOURCES += qml.qrc
-
-DESTDIR = ./build
 
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
