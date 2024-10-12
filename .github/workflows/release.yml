@@ -69,8 +69,8 @@ jobs:
       run: |
         makensis installer.nsi
 
-- name: List build directory contents
-      run: ls *.exe & ls -la ./build
+    - name: List build directory contents
+          run: ls *.exe & ls -la ./build
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v3
