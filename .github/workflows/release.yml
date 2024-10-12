@@ -12,8 +12,10 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout repository with submodules
       uses: actions/checkout@v3
+      with:
+        submodules: true  # Initialize and update submodules
 
     - name: Set up Qt 5.15
       uses: jurplel/install-qt-action@v3
@@ -43,8 +45,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout repository with submodules
       uses: actions/checkout@v3
+      with:
+        submodules: true  # Initialize and update submodules
 
     - name: Set up Qt 5.15
       uses: jurplel/install-qt-action@v3
