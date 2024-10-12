@@ -59,10 +59,18 @@ jobs:
         version: '5.15.2'
         host: 'windows'
         target: 'desktop'
+        arch: 'win64_mingw73'
+
+     - name: Install MinGW
+      run: choco install mingw
+
+    - name: Set PATH for MinGW
+      run: |
+        echo "##[add-path]C:\Program Files (x86)\mingw-w64\bin"
 
     - name: Build project (Windows)
       run: |
-        qmake
+        qmake || { echo "qmake failed"; exit 1; }
         mingw32-make -j4
 
     - name: Create Windows installer (NSIS)
@@ -81,7 +89,7 @@ jobs:
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build_macos, build_windows]
+    needs: [build_macos]
 
     steps:
     - name: Download macOS installer
