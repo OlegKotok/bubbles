@@ -63,7 +63,7 @@ jobs:
     - name: Build project (Windows)
       run: |
         qmake
-        mingw32-make
+        mingw32-make -j4
 
     - name: Create Windows installer (NSIS)
       run: |
