@@ -53,6 +53,14 @@ jobs:
       with:
         submodules: true  # Initialize and update submodules
 
+    - name: Install Visual Studio Build Tools
+      run: |
+        choco install visualstudio2022buildtools --include-optional --version=17.0.0
+
+    - name: Set up MSVC environment
+      run: |
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64
+
     - name: Set up Qt 5.15
       uses: jurplel/install-qt-action@v3
       with:
@@ -63,7 +71,7 @@ jobs:
     - name: Build project (Windows)
       run: |
         qmake
-        mingw32-make -j$(nproc)
+        nmake
 
     - name: Create Windows installer (NSIS)
       run: |
