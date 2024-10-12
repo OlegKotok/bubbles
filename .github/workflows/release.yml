@@ -62,7 +62,7 @@ jobs:
 
     - name: Set PATH for MinGW
       run: |
-        echo "##[add-path]C:\Program Files (x86)\mingw-w64\bin"
+        echo "C:\Program Files (x86)\mingw-w64\bin" >> $GITHUB_PATH
 
     - name: Build project (Windows)
       run: |
@@ -102,7 +102,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          BubblesApp.dmg
-      #    BubblesApp.exe
+          BublesApp.dmg
+      #    BublesApp.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub automatically provides this token
