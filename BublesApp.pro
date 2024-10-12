@@ -19,6 +19,9 @@ SOURCES += \
 
 RESOURCES += qml.qrc
 
+DESTDIR = ./build
+
+
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
 INCLUDEPATH += ./qml-box2d/Box2D
