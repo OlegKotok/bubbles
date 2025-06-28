@@ -86,6 +86,7 @@ jobs:
           host: ${{ matrix.host }}
           target: 'desktop'
           arch: ${{ matrix.arch }}
+          modules: 'qt5compat qtshadertools'
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
@@ -126,12 +127,13 @@ jobs:
           cmake --build .
 
       - name: Run tests
+        if: success()
         run: |
           cd build
           ctest --output-on-failure
 
       - name: Deploy Qt runtime (Linux)
-        if: runner.os == 'Linux'
+        if: success() && runner.os == 'Linux'
         run: |
           export QTDIR=$Qt6_DIR
           export PATH=$Qt6_DIR/bin:$PATH
@@ -141,7 +143,7 @@ jobs:
         shell: bash
 
       - name: Deploy Qt runtime (macOS)
-        if: runner.os == 'macOS'
+        if: success() && runner.os == 'macOS'
         run: |
           export QTDIR=$Qt6_DIR
           export PATH=$Qt6_DIR/bin:$PATH
@@ -151,13 +153,14 @@ jobs:
         shell: bash
 
       - name: Deploy Qt runtime (Windows)
-        if: runner.os == 'Windows'
+        if: success() && runner.os == 'Windows'
         run: |
           $env:PATH = "$env:Qt6_DIR\bin;$env:PATH"
           windeployqt --qmldir . --release build\BubblesApp.exe
         shell: pwsh
 
       - name: Package artifacts
+        if: success()
         shell: bash
         run: |
           VERSION=${{ github.ref_name }}  # falls back to SHA on branch builds
@@ -168,6 +171,7 @@ jobs:
           esac
 
       - name: Upload build artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Bubbles-${{ github.ref_name }}-${{ matrix.host }}
