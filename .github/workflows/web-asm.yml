@@ -75,7 +75,12 @@ jobs:
         # Install Qt6 WebAssembly
         mkdir -p qt6-wasm
         cd qt6-wasm
-        aqt install-qt linux desktop 6.5.2 wasm_multithread -m qt5compat qtshadertools
+        aqt install-qt linux desktop 6.5.2 wasm_multithread -m qtshadertools qtquickcontrols2
+        
+        # Verify installation
+        echo "Qt6 WebAssembly installation contents:"
+        find . -name "Qt6Config.cmake" -o -name "qt6-config.cmake" | head -10
+        ls -la 6.5.2/wasm_multithread/lib/cmake/ || true
 
     - name: Set up Qt6 WebAssembly environment
       run: |
@@ -95,13 +100,24 @@ jobs:
         mkdir -p build-wasm
         cd build-wasm
         
+        echo "Environment check:"
+        echo "QT_ROOT: $QT_ROOT"
+        echo "Qt6_DIR: $Qt6_DIR"
+        echo "PATH: $PATH"
+        
+        echo "Checking for Qt6Config.cmake:"
+        find "$QT_ROOT" -name "Qt6Config.cmake" 2>/dev/null || echo "Qt6Config.cmake not found"
+        
+        echo "CMake configuration:"
         emcmake cmake .. \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DQT_HOST_PATH=/usr \
           -DCMAKE_PREFIX_PATH="$QT_ROOT" \
+          -DQt6_DIR="$Qt6_DIR" \
           -DCMAKE_CROSSCOMPILING_EMULATOR="node" \
-          -DBUILD_TESTING=OFF
+          -DBUILD_TESTING=OFF \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
 
     - name: Build WebAssembly application
       run: |
@@ -229,7 +245,7 @@ jobs:
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main'  # Only deploy from main branch
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/qt6-cmake-version'  # Deploy from main or qt6-cmake-version branches
     runs-on: ubuntu-latest
     
     environment:
