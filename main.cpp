@@ -3,6 +3,9 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QtQml>
+#include <QtQml/qqmlextensionplugin.h>
+Q_IMPORT_QML_PLUGIN(Box2DPlugin)
+Q_IMPORT_QML_PLUGIN(BubblesPlugin)
 
 using namespace Qt::StringLiterals;
 

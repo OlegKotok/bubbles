@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.24)
 
 project(Bubbles LANGUAGES CXX)
 
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Dependency checking and validation
 function(check_dependencies)
     # Check for required tools
@@ -60,6 +64,8 @@ elseif(WIN32)
     set(BUILD_WINDOWS ON)
 elseif(UNIX AND NOT APPLE)
     set(BUILD_LINUX ON)
+elseif(EMSCRIPTEN)
+    set(BUILD_WASM ON)
 else()
     # Default to desktop build
 endif()
@@ -105,6 +111,27 @@ if(BUILD_IOS OR BUILD_ANDROID)
     list(APPEND QT_COMPONENTS Multimedia)
 endif()
 
+# Check for Qt6::Core5Compat availability first
+find_package(Qt6 COMPONENTS Core5Compat QUIET)
+if(NOT Qt6Core5Compat_FOUND)
+    message(FATAL_ERROR 
+        "\n========================================\n"
+        "ERROR: Qt6::Core5Compat module not found!\n"
+        "\n"
+        "This application requires Qt6::Core5Compat for backward compatibility.\n"
+        "Please ensure your Qt6 installation includes the Core5Compat module.\n"
+        "\n"
+        "Solutions:\n"
+        "  - Install Qt6 with Core5Compat: 'qt6-5compat' package on most systems\n"
+        "  - On Ubuntu/Debian: sudo apt install qt6-5compat-dev\n"
+        "  - On macOS with Homebrew: brew install qt@6 (includes Core5Compat)\n"
+        "  - On Windows: Ensure Qt6 installation includes Core5Compat component\n"
+        "\n"
+        "Current CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}\n"
+        "========================================\n"
+    )
+endif()
+
 find_package(Qt6 REQUIRED COMPONENTS ${QT_COMPONENTS})
 
 # Set Qt policies before standard setup
@@ -118,12 +145,15 @@ endif()
 qt_standard_project_setup()
 
 # Add qml-box2d subdirectory first (it exports a target)
+# Force static linking for standalone executable
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static linking for qml-box2d" FORCE)
 add_subdirectory(qml-box2d)
 
-# Define QML module for the application
+# Define QML module for the application (static for standalone executable)
 qt_add_qml_module(bubbles
     URI Bubbles
     VERSION 1.0
+    STATIC  # Force static library
     QML_FILES
         main.qml
         BubblesLayout.qml
@@ -177,12 +207,18 @@ target_link_libraries(BubblesApp PRIVATE
     Qt6::Core5Compat
     qmlbox2d
     bubbles
+    bubblesplugin
 )
 
 # Add Multimedia library for mobile platforms
 if(BUILD_IOS OR BUILD_ANDROID)
     target_link_libraries(BubblesApp PRIVATE Qt6::Multimedia)
 endif()
+
+# Import QML plugins and finalize executable
+qt_import_qml_plugins(BubblesApp)          # Qt >= 6.4
+qt_finalize_executable(BubblesApp)
+
 
 # Installation and deployment rules
 if(BUILD_ANDROID OR BUILD_IOS)
@@ -230,5 +266,38 @@ elseif(BUILD_ANDROID)
         QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/platforms/android"
         QT_ANDROID_TARGET_SDK_VERSION "31"
         QT_ANDROID_MIN_SDK_VERSION "21"
+    )
+elseif(BUILD_WASM OR EMSCRIPTEN)
+    # WebAssembly-specific configuration
+    set_target_properties(BubblesApp PROPERTIES
+        SUFFIX ".html"
+    )
+    
+    # WebAssembly-specific compiler and linker flags
+    target_compile_options(BubblesApp PRIVATE
+        "SHELL:-s USE_PTHREADS=1"
+        "SHELL:-s PTHREAD_POOL_SIZE=4"
+    )
+    
+    target_link_options(BubblesApp PRIVATE
+        "SHELL:-s USE_PTHREADS=1"
+        "SHELL:-s PTHREAD_POOL_SIZE=4"
+        "SHELL:-s WASM=1"
+        "SHELL:-s FULL_ES2=1"
+        "SHELL:-s FULL_ES3=1"
+        "SHELL:-s USE_WEBGL2=1"
+        "SHELL:-s ALLOW_MEMORY_GROWTH=1"
+        "SHELL:-s INITIAL_MEMORY=64MB"
+        "SHELL:-s MAXIMUM_MEMORY=256MB"
+        "SHELL:-s EXPORTED_RUNTIME_METHODS=['UTF16ToString','stringToUTF16']"
+        "SHELL:-s MODULARIZE=1"
+        "SHELL:-s EXPORT_NAME='createQtAppInstance'"
+    )
+    
+    # Ensure Qt WebAssembly platform is properly configured
+    set_target_properties(BubblesApp PROPERTIES
+        QT_WASM_INITIAL_MEMORY "64MB"
+        QT_WASM_MAXIMUM_MEMORY "256MB"
+        QT_WASM_PTHREAD_POOL_SIZE "4"
     )
 endif()

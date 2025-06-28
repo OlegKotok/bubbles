@@ -7,7 +7,7 @@ A Qt6 QML application featuring physics-based bubbles using Box2D physics engine
 This application supports building and deployment across multiple platforms:
 - **Desktop**: Linux, macOS, Windows
 - **Mobile**: iOS, Android
-- **Web**: WebAssembly (via Emscripten)
+- **Web**: WebAssembly (via Emscripten) with GitHub Pages deployment
 
 ## CI/CD Pipeline Features
 
@@ -31,8 +31,24 @@ Our GitHub Actions workflow provides:
 
 ## Quick Start
 
-### Universal Build Script (Recommended)
-For any platform, use the universal build script:
+### One-Command Run (Recommended)
+For the quickest way to build and run the application:
+```bash
+./bubbles.sh
+```
+
+Or remotely:
+```bash
+curl -sSL <repo>/bubbles.sh | bash
+```
+
+The `bubbles.sh` script will:
+1. Build the application (or reuse cache if already built)
+2. Automatically detect the platform and build directory
+3. Run the application immediately
+
+### Universal Build Script
+For more control over the build process, use the universal build script:
 ```bash
 ./build-universal.sh [BUILD_TYPE] [TARGET_PLATFORM]
 ```
@@ -90,6 +106,51 @@ export ANDROID_HOME=/path/to/android/sdk
 export ANDROID_NDK_ROOT=/path/to/android/ndk
 ./build-universal.sh Release android
 ```
+
+#### WebAssembly (GitHub Pages Deployment)
+
+The project supports automatic WebAssembly compilation and deployment to GitHub Pages!
+
+**Automatic Deployment:**
+1. Push to `main` branch triggers WebAssembly build
+2. The built app is automatically deployed to GitHub Pages
+3. Access your app at: `https://username.github.io/bubbles`
+
+**Manual Local WebAssembly Build:**
+```bash
+# Install Emscripten (one-time setup)
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install 3.1.50
+./emsdk activate 3.1.50
+source ./emsdk_env.sh
+cd ..
+
+# Install Qt6 WebAssembly (one-time setup)
+pip3 install aqtinstall
+mkdir -p qt6-wasm
+cd qt6-wasm
+aqt install-qt linux desktop 6.5.2 wasm_multithread -m qt5compat qtshadertools
+cd ..
+
+# Build for WebAssembly
+export QT_ROOT="$(pwd)/qt6-wasm/6.5.2/wasm_multithread"
+source emsdk/emsdk_env.sh
+mkdir -p build-wasm
+cd build-wasm
+emcmake cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$QT_ROOT"
+cmake --build . --parallel $(nproc)
+
+# Serve locally for testing
+python3 -m http.server 8000
+# Open http://localhost:8000/BubblesApp.html
+```
+
+**GitHub Pages Setup (One-time):**
+1. Go to your repository Settings
+2. Scroll to "Pages" section
+3. Source: "GitHub Actions"
+4. That's it! Push to main branch to deploy
 
 ### One-Command Setup and Build
 

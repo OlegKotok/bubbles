@@ -5,6 +5,29 @@
 
 set -e
 
+# Handle platform-only option first (before any output)
+if [[ "$1" == "platform-only" ]]; then
+    # Function to detect current platform (inline for platform-only)
+    detect_platform_inline() {
+        case "$(uname -s)" in
+            Darwin*)
+                echo "macos"
+                ;;
+            Linux*)
+                echo "linux"
+                ;;
+            CYGWIN*|MINGW32*|MSYS*|MINGW*)
+                echo "windows"
+                ;;
+            *)
+                echo "unknown"
+                ;;
+        esac
+    }
+    echo "$(detect_platform_inline)"
+    exit 0
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -200,7 +223,75 @@ build_application() {
             ;;
     esac
     
+    # Deploy macOS app bundle for standalone distribution
+    if [[ "$platform" == "macos" ]] && [[ -f "BubblesApp.app/Contents/MacOS/BubblesApp" ]]; then
+        deploy_macos_app
+    fi
+    
     echo -e "${GREEN}✅ Build completed successfully!${NC}"
+}
+
+# Function to deploy macOS app bundle
+deploy_macos_app() {
+    echo -e "${YELLOW}📦 Deploying Qt frameworks to macOS app bundle...${NC}"
+    
+    # Find macdeployqt in common locations
+    local macdeployqt=""
+    for path in "/opt/homebrew/opt/qt@6/bin/macdeployqt" "/usr/local/opt/qt@6/bin/macdeployqt" "/opt/homebrew/bin/macdeployqt"; do
+        if [[ -f "$path" ]]; then
+            macdeployqt="$path"
+            break
+        fi
+    done
+    
+    if [[ -n "$macdeployqt" ]]; then
+        echo -e "${BLUE}   Using macdeployqt: $macdeployqt${NC}"
+        "$macdeployqt" BubblesApp.app -qmldir=../../ -verbose=2
+        
+        if [[ $? -eq 0 ]]; then
+            echo -e "${GREEN}✅ App bundle deployment completed!${NC}"
+            echo -e "${GREEN}🎉 The app bundle is now standalone and ready for distribution${NC}"
+        else
+            echo -e "${YELLOW}⚠️ macdeployqt completed with warnings, but app may still work${NC}"
+        fi
+        
+        # Sign the app bundle for macOS security requirements
+        echo -e "${BLUE}🔐 Code signing app bundle...${NC}"
+        codesign --force --deep --sign - BubblesApp.app
+        if [[ $? -eq 0 ]]; then
+            echo -e "${GREEN}✅ App bundle code signed successfully${NC}"
+        else
+            echo -e "${YELLOW}⚠️ Code signing failed, but app may still work locally${NC}"
+        fi
+        
+        # Verify the signature
+        echo -e "${BLUE}🔍 Verifying code signature...${NC}"
+        codesign -v BubblesApp.app
+        if [[ $? -eq 0 ]]; then
+            echo -e "${GREEN}✅ Code signature verification passed${NC}"
+        else
+            echo -e "${YELLOW}⚠️ Code signature verification failed${NC}"
+        fi
+        
+        # Copy the standalone app to the project root for convenience
+        echo -e "${BLUE}📋 Copying standalone app to project root...${NC}"
+        rm -rf "../../BubblesApp.app" 2>/dev/null || true
+        cp -R "BubblesApp.app" "../../BubblesApp.app"
+        
+        # Sign the copied app as well
+        echo -e "${BLUE}🔐 Code signing copied app bundle...${NC}"
+        codesign --force --deep --sign - "../../BubblesApp.app"
+        if [[ $? -eq 0 ]]; then
+            echo -e "${GREEN}✅ Copied app bundle code signed successfully${NC}"
+        else
+            echo -e "${YELLOW}⚠️ Code signing of copied app failed${NC}"
+        fi
+        
+        echo -e "${GREEN}✅ Standalone BubblesApp.app copied to project root${NC}"
+    else
+        echo -e "${YELLOW}⚠️ macdeployqt not found - app bundle may require Qt installation to run${NC}"
+        echo -e "${YELLOW}   To install: brew install qt@6${NC}"
+    fi
 }
 
 # Function to provide run instructions
