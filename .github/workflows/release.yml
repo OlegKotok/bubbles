@@ -16,7 +16,7 @@ jobs:
       fail-fast: false  # Do not fail fast to ensure independent platform builds
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             host: linux
             arch: gcc_64
           - os: macos-latest
@@ -93,10 +93,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build cmake libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libfontconfig1
-          # Install linuxdeployqt
-          wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
-          chmod +x linuxdeployqt-continuous-x86_64.AppImage
-          sudo mv linuxdeployqt-continuous-x86_64.AppImage /usr/local/bin/linuxdeployqt
+          # Use AppImageTool instead of linuxdeployqt to avoid glibc issues
+          wget -c "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool-x86_64.AppImage
+          sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
           # Install fuse for AppImage support
           sudo apt-get install -y fuse libfuse2
 
@@ -123,8 +123,12 @@ jobs:
           echo "Building application on ${{ matrix.os }}"
           mkdir -p build
           cd build
-          cmake .. -G Ninja
-          cmake --build .
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+          else
+            cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+          fi
+          cmake --build . --parallel
 
       - name: Run tests
         if: success()
@@ -135,13 +139,35 @@ jobs:
       - name: Deploy Qt runtime (Linux)
         if: success() && runner.os == 'Linux'
         run: |
+          # Create AppDir structure manually
+          mkdir -p BubblesApp.AppDir/usr/bin
+          mkdir -p BubblesApp.AppDir/usr/lib
+          mkdir -p BubblesApp.AppDir/usr/share/applications
+          mkdir -p BubblesApp.AppDir/usr/share/icons/hicolor/256x256/apps
+          
+          # Copy executable
+          cp build/BubblesApp BubblesApp.AppDir/usr/bin/
+          
+          # Copy Qt libraries
           export QTDIR=$Qt6_DIR
           export PATH=$Qt6_DIR/bin:$PATH
-          # Set ARCH environment variable for linuxdeployqt
+          
+          # Use windeployqt equivalent for Linux (manual deployment)
+          ldd build/BubblesApp | grep qt | awk '{print $3}' | xargs -I {} cp {} BubblesApp.AppDir/usr/lib/ || true
+          
+          # Create .desktop file
+          cat > BubblesApp.AppDir/BubblesApp.desktop << EOF
+          [Desktop Entry]
+          Type=Application
+          Name=BubblesApp
+          Exec=BubblesApp
+          Icon=BubblesApp
+          Categories=Game;
+          EOF
+          
+          # Create AppImage using appimagetool
           export ARCH=x86_64
-          linuxdeployqt build/BubblesApp -appimage -qmldir=. -bundle-non-qt-libs
-          # Move generated AppImage to predictable location
-          find . -name "*.AppImage" -exec mv {} BubblesApp-x86_64.AppImage \;
+          appimagetool BubblesApp.AppDir BubblesApp-x86_64.AppImage
         shell: bash
 
       - name: Deploy Qt runtime (macOS)
@@ -158,7 +184,13 @@ jobs:
         if: success() && runner.os == 'Windows'
         run: |
           $env:PATH = "$env:Qt6_DIR\bin;$env:PATH"
-          windeployqt --qmldir . --release build\BubblesApp.exe
+          # Create deployment directory
+          New-Item -ItemType Directory -Force -Path "deploy"
+          Copy-Item "build\BubblesApp.exe" "deploy\"
+          # Deploy Qt dependencies
+          windeployqt --qmldir . --release --force deploy\BubblesApp.exe
+          # Copy any additional DLLs that might be missed
+          Get-ChildItem "build\*.dll" -ErrorAction SilentlyContinue | Copy-Item -Destination "deploy\"
         shell: pwsh
 
       - name: Package artifacts
@@ -169,7 +201,7 @@ jobs:
           case "${{ runner.os }}" in
             Linux)   tar -czf Bubbles-${VERSION}-linux.tar.gz  Bubbles*.AppImage ;;
             macOS)   mv BubblesApp.dmg Bubbles-${VERSION}-mac.dmg ;;
-            Windows) 7z a Bubbles-${VERSION}-windows.zip build\BubblesApp.exe build\*.dll ;;
+            Windows) 7z a Bubbles-${VERSION}-windows.zip deploy/* ;;
           esac
 
       - name: Upload build artifacts
