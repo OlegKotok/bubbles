@@ -187,9 +187,55 @@ jobs:
         run: |
           export QTDIR=$Qt6_DIR
           export PATH=$Qt6_DIR/bin:$PATH
-          macdeployqt build/BubblesApp.app -qmldir=. -verbose=2 -dmg
-          # Move generated DMG to predictable location
-          find . -name "*.dmg" -exec mv {} BubblesApp.dmg \;
+          
+          # Create a self-signed certificate for ad-hoc signing
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          
+          # Create a self-signed certificate
+          cat > cert.conf << EOF
+          [ req ]
+          default_bits = 2048
+          distinguished_name = req_distinguished_name
+          req_extensions = v3_req
+          prompt = no
+          
+          [ req_distinguished_name ]
+          C = US
+          ST = State
+          L = City
+          O = BubblesApp
+          OU = Development
+          CN = BubblesApp Developer
+          
+          [ v3_req ]
+          keyUsage = keyEncipherment, dataEncipherment
+          extendedKeyUsage = codeSigning
+          EOF
+          
+          # Generate certificate
+          openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout key.pem -config cert.conf
+          
+          # Import certificate to keychain
+          security import cert.pem -k build.keychain -T /usr/bin/codesign
+          security import key.pem -k build.keychain -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          
+          # Run macdeployqt
+          macdeployqt build/BubblesApp.app -qmldir=. -verbose=2
+          
+          # Sign the app bundle with ad-hoc signature
+          codesign --force --deep --sign - build/BubblesApp.app
+          
+          # Verify the signature
+          codesign --verify --verbose build/BubblesApp.app
+          
+          # Create DMG
+          hdiutil create -volname "BubblesApp" -srcfolder build/BubblesApp.app -ov -format UDZO BubblesApp.dmg
+          
+          # Clean up keychain
+          security delete-keychain build.keychain || true
         shell: bash
 
       - name: Deploy Qt runtime (Windows)
