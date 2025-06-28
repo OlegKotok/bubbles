@@ -13,10 +13,10 @@ jobs:
     name: Build
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true  # Fail fast on any build failure
+      fail-fast: false  # Do not fail fast to ensure independent platform builds
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             host: linux
             arch: gcc_64
           - os: macos-latest
@@ -137,6 +137,8 @@ jobs:
         run: |
           export QTDIR=$Qt6_DIR
           export PATH=$Qt6_DIR/bin:$PATH
+          # Set ARCH environment variable for linuxdeployqt
+          export ARCH=x86_64
           linuxdeployqt build/BubblesApp -appimage -qmldir=. -bundle-non-qt-libs
           # Move generated AppImage to predictable location
           find . -name "*.AppImage" -exec mv {} BubblesApp-x86_64.AppImage \;
