@@ -45,7 +45,7 @@ jobs:
 
       - name: Cache Qt
         id: cache-qt
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/Qt
@@ -56,7 +56,7 @@ jobs:
             ${{ runner.os }}-qt-
 
       - name: Cache CMake build directory
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             build
@@ -66,7 +66,7 @@ jobs:
             ${{ runner.os }}-cmake-
 
       - name: Cache vcpkg (if added later)
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             vcpkg
@@ -168,7 +168,7 @@ jobs:
           esac
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Bubbles-${{ github.ref_name }}-${{ matrix.host }}
           path: |
@@ -190,7 +190,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download all build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
