@@ -207,22 +207,46 @@ qt_add_resources(BubblesApp "images"
 # Add include directory for Box2D plugin headers
 target_include_directories(BubblesApp PRIVATE qml-box2d)
 
-# Link libraries
-target_link_libraries(BubblesApp PRIVATE
-    Qt6::Quick
-    Qt6::QuickControls2
-    qmlbox2d
-    bubbles
-    bubblesplugin
-)
-
-# Ensure QML plugin initialization is linked for static builds
-# This is especially important on Windows where static linking requires explicit
-# inclusion of QML plugin registration symbols
-if(WIN32 OR BUILD_WINDOWS OR (CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT BUILD_SHARED_LIBS))
-    # The bubblesplugin_init object files are automatically linked through Qt's dependency system
-    # We just need to ensure the executable depends on the initialization objects
+# Link libraries conditionally based on platform
+if(WIN32 OR BUILD_WINDOWS)
+    # On Windows with static linking, QML module registration symbols are
+    # sometimes in separate object files that need explicit inclusion
     add_dependencies(BubblesApp bubblesplugin_init)
+    
+    # Force inclusion of all symbols from QML libraries to ensure
+    # QQmlModuleRegistration symbols are available
+    if(MINGW)
+        # Use whole-archive linking for MinGW to include all symbols
+        target_link_libraries(BubblesApp PRIVATE 
+            Qt6::Quick
+            Qt6::QuickControls2
+            qmlbox2d
+            "-Wl,--whole-archive"
+            bubbles 
+            bubblesplugin
+            "-Wl,--no-whole-archive"
+        )
+    else()
+        # For MSVC, use /WHOLEARCHIVE
+        target_link_libraries(BubblesApp PRIVATE
+            Qt6::Quick
+            Qt6::QuickControls2
+            qmlbox2d
+        )
+        target_link_options(BubblesApp PRIVATE 
+            "/WHOLEARCHIVE:$<TARGET_FILE:bubbles>"
+            "/WHOLEARCHIVE:$<TARGET_FILE:bubblesplugin>"
+        )
+    endif()
+else()
+    # Standard linking for other platforms
+    target_link_libraries(BubblesApp PRIVATE
+        Qt6::Quick
+        Qt6::QuickControls2
+        qmlbox2d
+        bubbles
+        bubblesplugin
+    )
 endif()
 
 # Conditionally link Core5Compat if available
