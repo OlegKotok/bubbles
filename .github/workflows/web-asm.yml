@@ -75,12 +75,25 @@ jobs:
         # Install Qt6 WebAssembly
         mkdir -p qt6-wasm
         cd qt6-wasm
-        aqt install-qt linux desktop 6.5.2 wasm_multithread -m qtshadertools qtquickcontrols2
+        
+        # First, check available modules
+        echo "Available modules for Qt 6.5.2 WebAssembly:"
+        aqt list-qt linux desktop --modules 6.5.2 wasm_multithread || true
+        
+        # Install desktop Qt6 first (required for WebAssembly)
+        echo "Installing desktop Qt6..."
+        aqt install-qt linux desktop 6.5.2 gcc_64 -m qtshadertools
+        
+        # Install Qt6 WebAssembly
+        echo "Installing Qt6 WebAssembly..."
+        aqt install-qt linux desktop 6.5.2 wasm_multithread -m qtshadertools
         
         # Verify installation
         echo "Qt6 WebAssembly installation contents:"
         find . -name "Qt6Config.cmake" -o -name "qt6-config.cmake" | head -10
         ls -la 6.5.2/wasm_multithread/lib/cmake/ || true
+        echo "Desktop Qt6 installation:"
+        ls -la 6.5.2/gcc_64/lib/cmake/ || true
 
     - name: Set up Qt6 WebAssembly environment
       run: |
@@ -100,19 +113,25 @@ jobs:
         mkdir -p build-wasm
         cd build-wasm
         
+        # Set Qt host path to desktop installation
+        QT_HOST_PATH="$(pwd)/../qt6-wasm/6.5.2/gcc_64"
+        
         echo "Environment check:"
         echo "QT_ROOT: $QT_ROOT"
         echo "Qt6_DIR: $Qt6_DIR"
+        echo "QT_HOST_PATH: $QT_HOST_PATH"
         echo "PATH: $PATH"
         
         echo "Checking for Qt6Config.cmake:"
         find "$QT_ROOT" -name "Qt6Config.cmake" 2>/dev/null || echo "Qt6Config.cmake not found"
+        echo "Checking for host Qt6Config.cmake:"
+        find "$QT_HOST_PATH" -name "Qt6Config.cmake" 2>/dev/null || echo "Host Qt6Config.cmake not found"
         
         echo "CMake configuration:"
         emcmake cmake .. \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
-          -DQT_HOST_PATH=/usr \
+          -DQT_HOST_PATH="$QT_HOST_PATH" \
           -DCMAKE_PREFIX_PATH="$QT_ROOT" \
           -DQt6_DIR="$Qt6_DIR" \
           -DCMAKE_CROSSCOMPILING_EMULATOR="node" \
