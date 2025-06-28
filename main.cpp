@@ -11,10 +11,7 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
     
-    // Register Box2D plugin directly (as shown in examples)
-    Box2DPlugin plugin;
-    plugin.registerTypes("Box2D");
-    qmlProtectModule("Box2D", 2);
+    // Box2D plugin will be automatically registered via CMake qt_add_qml_module
     
     // In Qt6, with qt_add_qml_module, QML files are available at /qt/qml/ prefix
     const QUrl url(u"qrc:/qt/qml/Bubbles/main.qml"_s);

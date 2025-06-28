@@ -64,7 +64,7 @@ fi
 
 # Build configuration
 BUILD_TYPE=${1:-Release}
-BUILD_DIR="build/macos-${BUILD_TYPE,,}"
+BUILD_DIR="build/macos-$(echo $BUILD_TYPE | tr '[:upper:]' '[:lower:]')"
 
 echo "🔨 Building application (${BUILD_TYPE} mode)..."
 echo "Build directory: ${BUILD_DIR}"
