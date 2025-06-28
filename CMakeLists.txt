@@ -104,21 +104,28 @@ elseif(BUILD_LINUX)
 endif()
 
 # Find Qt6 modules
-set(QT_COMPONENTS Quick Qml Gui Core QuickControls2 Core5Compat)
+set(QT_COMPONENTS Quick Qml Gui Core QuickControls2)
 
 # Add Multimedia for mobile platforms if needed
 if(BUILD_IOS OR BUILD_ANDROID)
     list(APPEND QT_COMPONENTS Multimedia)
 endif()
 
-# Check for Qt6::Core5Compat availability first
+# Check for Qt6::Core5Compat availability - optional for WebAssembly
 find_package(Qt6 COMPONENTS Core5Compat QUIET)
-if(NOT Qt6Core5Compat_FOUND)
+if(Qt6Core5Compat_FOUND)
+    list(APPEND QT_COMPONENTS Core5Compat)
+    set(HAS_CORE5COMPAT TRUE)
+    message(STATUS "Qt6::Core5Compat found - enabling backward compatibility features")
+elseif(EMSCRIPTEN OR BUILD_WASM)
+    message(STATUS "Qt6::Core5Compat not found - WebAssembly build will continue without it")
+    set(HAS_CORE5COMPAT FALSE)
+else()
     message(FATAL_ERROR 
         "\n========================================\n"
         "ERROR: Qt6::Core5Compat module not found!\n"
         "\n"
-        "This application requires Qt6::Core5Compat for backward compatibility.\n"
+        "This application requires Qt6::Core5Compat for backward compatibility on this platform.\n"
         "Please ensure your Qt6 installation includes the Core5Compat module.\n"
         "\n"
         "Solutions:\n"
@@ -204,11 +211,15 @@ target_include_directories(BubblesApp PRIVATE qml-box2d)
 target_link_libraries(BubblesApp PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
-    Qt6::Core5Compat
     qmlbox2d
     bubbles
     bubblesplugin
 )
+
+# Conditionally link Core5Compat if available
+if(HAS_CORE5COMPAT)
+    target_link_libraries(BubblesApp PRIVATE Qt6::Core5Compat)
+endif()
 
 # Add Multimedia library for mobile platforms
 if(BUILD_IOS OR BUILD_ANDROID)

@@ -84,14 +84,6 @@ cmake ../.. \
 echo "🏗️ Building..."
 make -j$(sysctl -n hw.ncpu)
 
+# Simple Run
 echo -e "${GREEN}✅ Build completed successfully!${NC}"
-echo ""
-echo "🎯 To run the application:"
-echo "   cd ${BUILD_DIR} && ./BubblesApp"
-echo ""
-echo "📱 Expected behavior:"
-echo "   • Black 1024×768 window"
-echo "   • Ten initial bubbles with images"
-echo "   • Click to add 5 new bubbles at mouse position"
-echo "   • Physics collisions with walls and other bubbles"
-echo "   • Round clipping with GraphicalEffects mask"
+echo -e "${BLUE}To run the application, double-click the app bundle!${NC}"

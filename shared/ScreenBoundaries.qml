@@ -1,4 +1,4 @@
-import Box2DStatic 2.0
+import Box2D 2.0
 
 /*
   This body places 32-pixel wide invisible static bodies around the screen,

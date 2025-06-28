@@ -1,4 +1,4 @@
-import Box2DStatic 2.0
+import Box2D 2.0
 
 Body {
     id: body

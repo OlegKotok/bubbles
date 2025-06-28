@@ -1,6 +1,6 @@
-import QtQuick 2.2
-import Box2DStatic 2.0
-import QtGraphicalEffects 1.0
+import QtQuick
+import Box2D 2.0
+import Qt5Compat.GraphicalEffects
 import "shared"
 
 PhysicsItem {
@@ -30,9 +30,7 @@ PhysicsItem {
 
     Rectangle {
         id: rect
-        //x: circle.x - circle.radius
-        //y: circle.y - circle.radius
-        anchors.centerIn: circle
+        anchors.centerIn: bubble
         height: bubble.radius * 2
         width: bubble.radius * 2
         radius: bubble.radius
@@ -66,8 +64,8 @@ PhysicsItem {
         anchors.fill: parent
         onReleased: {
             console.log(bubble.x+bubble.width/2, bubble.y+bubble.height/2);
-            circle.x += mouseX;
-            circle.y += mouseY;
+            bubble.body.linearVelocity.x += mouseX / 10;
+            bubble.body.linearVelocity.y += mouseY / 10;
         }
     }
 }

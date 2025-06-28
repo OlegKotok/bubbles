@@ -1,6 +1,6 @@
-import QtQuick 2.2
-import QtQuick.Window 2.2;
-import Box2DStatic 2.0
+import QtQuick
+import QtQuick.Window
+import Box2D 2.0
 import "shared"
 
 Item {
@@ -98,11 +98,11 @@ Item {
         }
     }
 
-    DebugDraw {
-        id: debugDraw
-        world: physicsWorld
-        opacity: 1
-        visible: false
-    }
+    // DebugDraw {
+    //     id: debugDraw
+    //     world: physicsWorld
+    //     opacity: 1
+    //     visible: false
+    // }
 
 }
