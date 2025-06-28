@@ -76,24 +76,35 @@ jobs:
         mkdir -p qt6-wasm
         cd qt6-wasm
         
-        # First, check available modules
+        # First, check available modules for WebAssembly
         echo "Available modules for Qt 6.5.2 WebAssembly:"
-        aqt list-qt linux desktop --modules 6.5.2 wasm_multithread || true
+        aqt list-qt linux desktop --modules 6.5.2 || true
         
-        # Install desktop Qt6 first (required for WebAssembly)
-        echo "Installing desktop Qt6..."
-        aqt install-qt linux desktop 6.5.2 gcc_64 -m qtshadertools
+        # Install desktop Qt6 first (required as host Qt for WebAssembly builds)
+        echo "Installing desktop Qt6 (host)..."
+        aqt install-qt linux desktop 6.5.2 gcc_64
+        echo "Adding modules to desktop Qt6..."
+        aqt install-qt linux desktop 6.5.2 gcc_64 -m qtshadertools qt5compat qtquickcontrols2 qtdeclarative || echo "Some modules failed to install for desktop Qt6"
         
-        # Install Qt6 WebAssembly
-        echo "Installing Qt6 WebAssembly..."
-        aqt install-qt linux desktop 6.5.2 wasm_multithread -m qtshadertools
+        # Install Qt6 WebAssembly base first
+        echo "Installing Qt6 WebAssembly base..."
+        aqt install-qt linux desktop 6.5.2 wasm_multithread
+        echo "Adding modules to WebAssembly Qt6..."
+        aqt install-qt linux desktop 6.5.2 wasm_multithread -m qtshadertools qt5compat qtquickcontrols2 qtdeclarative || echo "Some modules failed to install for WebAssembly Qt6"
         
         # Verify installation
         echo "Qt6 WebAssembly installation contents:"
         find . -name "Qt6Config.cmake" -o -name "qt6-config.cmake" | head -10
+        echo "WebAssembly Qt6 lib/cmake contents:"
         ls -la 6.5.2/wasm_multithread/lib/cmake/ || true
-        echo "Desktop Qt6 installation:"
+        echo "Desktop Qt6 lib/cmake contents:"
         ls -la 6.5.2/gcc_64/lib/cmake/ || true
+        
+        # Check for Qt6Quick specifically
+        echo "Checking for Qt6Quick in WebAssembly installation:"
+        ls -la 6.5.2/wasm_multithread/lib/cmake/Qt6Quick/ || echo "Qt6Quick not found in WebAssembly installation"
+        echo "Checking for Qt6Quick in desktop installation:"
+        ls -la 6.5.2/gcc_64/lib/cmake/Qt6Quick/ || echo "Qt6Quick not found in desktop installation"
 
     - name: Set up Qt6 WebAssembly environment
       run: |
@@ -136,7 +147,9 @@ jobs:
           -DQt6_DIR="$Qt6_DIR" \
           -DCMAKE_CROSSCOMPILING_EMULATOR="node" \
           -DBUILD_TESTING=OFF \
-          -DCMAKE_VERBOSE_MAKEFILE=ON
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
+          -DQT_DEBUG_FIND_PACKAGE=ON \
+          --debug-find-pkg=Qt6Quick
 
     - name: Build WebAssembly application
       run: |
