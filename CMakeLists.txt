@@ -51,11 +51,24 @@ if(POLICY CMP0151)
 endif()
 
 
-# Platform build options
-option(BUILD_ANDROID "Build for Android" OFF)
-option(BUILD_IOS "Build for iOS" OFF)
-option(BUILD_WINDOWS "Build for Windows" OFF)
-option(BUILD_LINUX "Build for Linux" OFF)
+# Platform detection and build options
+if(ANDROID)
+    set(BUILD_ANDROID ON)
+elseif(IOS)
+    set(BUILD_IOS ON)
+elseif(WIN32)
+    set(BUILD_WINDOWS ON)
+elseif(UNIX AND NOT APPLE)
+    set(BUILD_LINUX ON)
+else()
+    # Default to desktop build
+endif()
+
+# Manual platform override options
+option(BUILD_ANDROID "Build for Android" ${BUILD_ANDROID})
+option(BUILD_IOS "Build for iOS" ${BUILD_IOS})
+option(BUILD_WINDOWS "Build for Windows" ${BUILD_WINDOWS})
+option(BUILD_LINUX "Build for Linux" ${BUILD_LINUX})
 
 # Set platform-specific configurations
 if(BUILD_IOS)
@@ -97,7 +110,8 @@ find_package(Qt6 REQUIRED COMPONENTS ${QT_COMPONENTS})
 # Set Qt policies before standard setup
 if(COMMAND qt_policy)
     qt_policy(SET QTP0001 NEW)  # Default QML resource prefix
-    qt_policy(SET QTP0004 NEW)  # QML directory structure
+    # Note: QTP0004 is not available in Qt 6.5.2, so we skip it
+    # qt_policy(SET QTP0004 NEW)  # QML directory structure - not supported in this Qt version
 endif()
 
 # Standard Qt project setup
@@ -128,6 +142,18 @@ qt_add_qml_module(bubbles
 
 # Create executable target
 qt_add_executable(BubblesApp)
+
+# Enable app bundle for macOS
+if(APPLE AND NOT BUILD_IOS)
+    set_target_properties(BubblesApp PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Info.plist"
+        MACOSX_BUNDLE_BUNDLE_NAME "BubblesApp"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
+        MACOSX_BUNDLE_IDENTIFIER "com.example.bubbles"
+    )
+endif()
 
 # Add main.cpp to the executable
 target_sources(BubblesApp PRIVATE main.cpp)
