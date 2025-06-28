@@ -2,6 +2,43 @@ cmake_minimum_required(VERSION 3.24)
 
 project(Bubbles LANGUAGES CXX)
 
+# Dependency checking and validation
+function(check_dependencies)
+    # Check for required tools
+    find_program(GIT_EXECUTABLE git)
+    if(NOT GIT_EXECUTABLE)
+        message(FATAL_ERROR "Git is required but not found. Please install git.")
+    endif()
+    
+    # Check for submodules
+    if(NOT EXISTS "${CMAKE_SOURCE_DIR}/qml-box2d/CMakeLists.txt")
+        message(STATUS "qml-box2d submodule not found. Initializing...")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            RESULT_VARIABLE GIT_SUBMOD_RESULT
+        )
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+    
+    # Validate Qt6 installation
+    if(NOT Qt6_FOUND)
+        message(STATUS "Searching for Qt6 in common locations...")
+        set(CMAKE_PREFIX_PATH 
+            "/opt/homebrew/opt/qt@6"
+            "/usr/local/opt/qt@6"
+            "/usr/local/Qt-6*"
+            "~/Qt/6*"
+            ${CMAKE_PREFIX_PATH}
+        )
+    endif()
+endfunction()
+
+# Call dependency checking
+check_dependencies()
+
 # Enable native architecture for macOS (auto-detect)
 if(APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
     # Let CMake auto-detect the architecture
