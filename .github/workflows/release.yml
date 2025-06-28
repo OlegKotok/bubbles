@@ -123,12 +123,9 @@ jobs:
           echo "Building application on ${{ matrix.os }}"
           mkdir -p build
           cd build
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
-          else
-            cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
-          fi
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build . --parallel
+        shell: bash
 
       - name: Run tests
         if: success()
@@ -148,11 +145,17 @@ jobs:
           # Copy executable
           cp build/BubblesApp BubblesApp.AppDir/usr/bin/
           
+          # Create a simple icon (fallback)
+          convert -size 256x256 xc:blue -fill white -gravity center -pointsize 48 -annotate +0+0 "Bubbles" BubblesApp.AppDir/BubblesApp.png || {
+            # If ImageMagick is not available, create a simple text file as icon placeholder
+            touch BubblesApp.AppDir/BubblesApp.png
+          }
+          
           # Copy Qt libraries
           export QTDIR=$Qt6_DIR
           export PATH=$Qt6_DIR/bin:$PATH
           
-          # Use windeployqt equivalent for Linux (manual deployment)
+          # Use ldd to find and copy Qt libraries
           ldd build/BubblesApp | grep qt | awk '{print $3}' | xargs -I {} cp {} BubblesApp.AppDir/usr/lib/ || true
           
           # Create .desktop file
@@ -164,6 +167,15 @@ jobs:
           Icon=BubblesApp
           Categories=Game;
           EOF
+          
+          # Create AppRun script
+          cat > BubblesApp.AppDir/AppRun << 'EOF'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+          exec "${HERE}/usr/bin/BubblesApp" "$@"
+          EOF
+          chmod +x BubblesApp.AppDir/AppRun
           
           # Create AppImage using appimagetool
           export ARCH=x86_64
