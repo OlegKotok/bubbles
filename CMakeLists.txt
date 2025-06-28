@@ -216,6 +216,15 @@ target_link_libraries(BubblesApp PRIVATE
     bubblesplugin
 )
 
+# Ensure QML plugin initialization is linked for static builds
+# This is especially important on Windows where static linking requires explicit
+# inclusion of QML plugin registration symbols
+if(WIN32 OR BUILD_WINDOWS OR (CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT BUILD_SHARED_LIBS))
+    # The bubblesplugin_init object files are automatically linked through Qt's dependency system
+    # We just need to ensure the executable depends on the initialization objects
+    add_dependencies(BubblesApp bubblesplugin_init)
+endif()
+
 # Conditionally link Core5Compat if available
 if(HAS_CORE5COMPAT)
     target_link_libraries(BubblesApp PRIVATE Qt6::Core5Compat)
